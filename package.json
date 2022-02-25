@@ -1,15 +1,18 @@
 {
   "name": "koishi-plugin-music",
   "description": "Share Music in Koishi",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
     "dist"
   ],
+  "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "build": "tsc -b"
+  },
   "keywords": [
     "chatbot",
     "koishi",
