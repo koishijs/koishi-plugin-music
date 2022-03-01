@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-music",
   "description": "Share Music in Koishi",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -10,6 +10,14 @@
   ],
   "author": "Shigma <shigma10826@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/koishijs/koishi-plugin-music.git"
+  },
+  "bugs": {
+    "url": "https://github.com/koishijs/koishi-plugin-music/issues"
+  },
+  "homepage": "https://github.com/koishijs/koishi-plugin-music",
   "scripts": {
     "build": "tsc -b"
   },
