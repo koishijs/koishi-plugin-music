@@ -64,7 +64,7 @@ export function apply(ctx: Context, config: Config) {
       try {
         const result = await search.call(ctx, keyword)
         if (typeof result === 'object') {
-          return segment('music', result)
+          return segment('onebot:music', result)
         }
       } catch {}
 
