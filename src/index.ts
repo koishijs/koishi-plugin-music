@@ -29,13 +29,13 @@ const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Re
     }
   },
   async qq(keyword) {
-    const data = await this.http.get('https://c.y.qq.com/soso/fcgi-bin/client_search_cp', {
-      params: { p: 1, n: 5, w: keyword, format: 'json' },
+    const data = await this.http.get('https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg', {
+      params: { key: keyword, format: 'json' },
     })
     if (data.code) return
     return {
       type: 'qq',
-      id: data.data.song.list[0].songid,
+      id: data.data.song.itemlist[0].id,
     }
   },
 }
