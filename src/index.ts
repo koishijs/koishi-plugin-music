@@ -15,6 +15,9 @@ export const Config: Schema<Config> = Schema.object({
 interface Result {
   type: string
   id: string
+  name: string
+  artist: string
+  url: string
 }
 
 const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Result>> = {
@@ -22,20 +25,28 @@ const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Re
     const data = await this.http.get('http://music.163.com/api/cloudsearch/pc', {
       params: { s: keyword, type: 1, offset: 0, limit: 5 },
     })
-    if (data.code !== 200) return
+    if (data.code !== 200 || data.result.songCount === 0) return
+    const song = data.result.songs[0]
     return {
       type: '163',
-      id: data.result.songs[0].id,
+      id: song.id,
+      name: song.name,
+      artist: song.ar.map(artist => artist.name).join('/'),
+      url: `https://music.163.com/#/song?id=${song.id}`,
     }
   },
   async qq(keyword) {
     const data = await this.http.get('https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg', {
       params: { key: keyword, format: 'json' },
     })
-    if (data.code) return
+    if (data.code || data.data.song.count === 0) return
+    const song = data.data.song.itemlist[0]
     return {
       type: 'qq',
-      id: data.data.song.itemlist[0].id,
+      id: song.id,
+      name: song.name,
+      artist: song.singer,
+      url: `https://y.qq.com/n/ryqq/songDetail/${song.mid}`,
     }
   },
 }
@@ -62,9 +73,9 @@ export function apply(ctx: Context, config: Config) {
       if (!keyword) return '请输入歌曲相关信息。'
 
       try {
-        const result = await search.call(ctx, keyword)
+        const result = await search.call(ctx, keyword) as Result
         if (typeof result === 'object') {
-          return segment('onebot:music', result)
+          return segment('onebot:music', result, `${result.name}\n${result.artist}\n${result.url}`)
         }
       } catch {}
 
