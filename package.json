@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-music",
   "description": "Share Music in Koishi",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -32,6 +32,7 @@
     "qq"
   ],
   "koishi": {
+    "browser": true,
     "description": {
       "en": "Share music (supports QQ Music and Netease Cloud Music)",
       "zh": "分享音乐（目前支持 QQ 音乐和网易云音乐）"
@@ -42,7 +43,7 @@
   },
   "devDependencies": {
     "@types/node": "^17.0.45",
-    "koishi": "^4.8.3",
-    "typescript": "^4.7.4"
+    "koishi": "^4.9.5",
+    "typescript": "^4.8.4"
   }
 }
