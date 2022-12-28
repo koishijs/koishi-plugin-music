@@ -1,5 +1,5 @@
 import { Context, Schema, segment } from 'koishi'
-import {list} from "./ui";
+import { list } from "./ui";
 
 export type Platform = 'netease' | 'qq'
 
@@ -20,7 +20,6 @@ export interface Result {
   id: string
   name: string
   artist: string
-  album?: string
   url: string
 }
 
@@ -36,8 +35,7 @@ const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Re
       id: song.id,
       name: song.name,
       artist: song.ar.map(artist => artist.name).join('/'),
-      url: `https://music.163.com/#/song?id=${song.id}`,
-      album: song.al.name,
+      url: `https://music.163.com/#/song?id=${song.id}`
     }))
   },
   async qq(keyword) {
@@ -51,8 +49,7 @@ const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Re
       id: song.id,
       name: song.name,
       artist: song.singer,
-      url: `https://y.qq.com/n/ryqq/songDetail/${song.mid}`,
-      album:''
+      url: `https://y.qq.com/n/ryqq/songDetail/${song.mid}`
     }))
   },
 }
@@ -70,7 +67,7 @@ export function apply(ctx: Context, config: Config) {
     .shortcut('来一首', { fuzzy: true })
     .shortcut('点一首', { fuzzy: true })
     .shortcut('整一首', { fuzzy: true })
-    .action(async ({ options }, keyword) => {
+    .action(async ({ options,session }, keyword) => {
       if (!options.platform) options.platform = platform
 
       const search = platforms[options.platform]
@@ -85,15 +82,24 @@ export function apply(ctx: Context, config: Config) {
         if (Array.isArray(result) && result.length > 0) {
           let song = null;
           if(result.length > 1 && !options.force){
-            return list(result,false);
+            await session.send(list(result,config.puppeteer && !!ctx['puppeteer']));
+            await session.prompt(async (session)=>{
+                if(!session.content)return;
+                const index = parseInt(session.content);
+                if(isNaN(index) || index<=0 || index>result.length) {
+                  await session.send('选择已取消。')
+                  return null;
+                }
+                song = result[index-1];
+                return true;
+              },{timeout:30000});
+          if(!song)return;
           }else song = result[0];
-
-          return segment('onebot:music', result, `${result.name}\n${result.artist}\n${result.url}`)
+          return segment('onebot:music', song, `${song.name}\n${song.artist}\n${song.url}`)
         }
       } catch(e) {
         console.info(e)
       }
-
       if (showWarning) return '点歌失败，请尝试更换平台。'
     })
 }
