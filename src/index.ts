@@ -57,7 +57,10 @@ const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Re
 export const name = 'music'
 
 export function apply(ctx: Context, config: Config) {
+
   const { showWarning, platform } = config
+
+  const logger = ctx.logger("music");
 
   ctx.command('music <name:text>', '点歌')
     // typescript cannot infer type from string templates
@@ -98,7 +101,7 @@ export function apply(ctx: Context, config: Config) {
           return segment('onebot:music', song, `${song.name}\n${song.artist}\n${song.url}`)
         }
       } catch(e) {
-        console.info(e)
+        logger.error(e)
       }
       if (showWarning) return '点歌失败，请尝试更换平台。'
     })
