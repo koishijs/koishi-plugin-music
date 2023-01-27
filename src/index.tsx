@@ -1,4 +1,5 @@
 import { Context, Schema, segment } from 'koishi'
+import {} from 'koishi-plugin-puppeteer'
 
 export type Platform = 'netease' | 'qq'
 
@@ -18,36 +19,37 @@ interface Result {
   name: string
   artist: string
   url: string
+  album: string
 }
 
-const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Result>> = {
+const platforms: Record<Platform, (this: Context, keyword: string) => Promise<Result[]>> = {
   async netease(keyword) {
     const data = await this.http.get('http://music.163.com/api/cloudsearch/pc', {
       params: { s: keyword, type: 1, offset: 0, limit: 5 },
     })
     if (data.code !== 200 || data.result.songCount === 0) return
-    const song = data.result.songs[0]
-    return {
+    return data.result.songs.map((song) => ({
       type: '163',
       id: song.id,
       name: song.name,
       artist: song.ar.map(artist => artist.name).join('/'),
       url: `https://music.163.com/#/song?id=${song.id}`,
-    }
+      album: song.al.name,
+    }))
   },
   async qq(keyword) {
     const data = await this.http.get('https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg', {
       params: { key: keyword, format: 'json' },
     })
     if (data.code || data.data.song.count === 0) return
-    const song = data.data.song.itemlist[0]
-    return {
+    return data.data.song.itemlist.map((song) => ({
       type: 'qq',
       id: song.id,
       name: song.name,
       artist: song.singer,
       url: `https://y.qq.com/n/ryqq/songDetail/${song.mid}`,
-    }
+      album: '',
+    }))
   },
 }
 
@@ -56,6 +58,15 @@ export const name = 'music'
 export function apply(ctx: Context, config: Config) {
   const { showWarning, platform } = config
 
+  function list(results: Result[]) {
+    return <>
+      <p>我们找到了多个可能符合条件的歌曲，请您进行选择：</p>
+      {results.map((t, i) => <>
+        <p>{i + 1}. {t.name} {t.artist} {t.album}</p>
+      </>)}
+    </>
+  }
+
   ctx.command('music <name:text>', '点歌')
     // typescript cannot infer type from string templates
     .option('platform', `-p <platform>  点歌平台，目前支持 qq, netease，默认为 ${platform}`, { type: Object.keys(platforms) })
@@ -63,7 +74,7 @@ export function apply(ctx: Context, config: Config) {
     .shortcut('来一首', { fuzzy: true })
     .shortcut('点一首', { fuzzy: true })
     .shortcut('整一首', { fuzzy: true })
-    .action(async ({ options }, keyword) => {
+    .action(async ({ session, options }, keyword) => {
       if (!options.platform) options.platform = platform
       const search = platforms[options.platform]
       if (!search) {
@@ -73,11 +84,22 @@ export function apply(ctx: Context, config: Config) {
       if (!keyword) return '请输入歌曲相关信息。'
 
       try {
-        const result = await search.call(ctx, keyword) as Result
-        if (typeof result === 'object') {
-          return segment('onebot:music', result, `${result.name}\n${result.artist}\n${result.url}`)
+        const result = await search.call(ctx, keyword) as Result[]
+        if (Array.isArray(result) && result.length > 0) {
+          if (result.length > 1) {
+            await session.send(list(result))
+            const input = await session.prompt()
+            if (!input || Number.isNaN(+input)) return '请输入正确的序号。'
+            const index = +input - 1
+            if (!result[index]) return '请输入正确的序号。'
+            return segment('onebot:music', result[index], `${result[index].name}\n${result[index].artist}\n${result[index].url}`)
+          }
+          const { name, artist, url } = result[0]
+          return segment('onebot:music', result, `${name}\n${artist}\n${url}`)
         }
-      } catch {}
+      } catch (e) {
+        console.warn(e)
+      }
 
       if (showWarning) return '点歌失败，请尝试更换平台。'
     })
