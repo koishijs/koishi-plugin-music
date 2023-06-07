@@ -130,7 +130,7 @@ export function apply(ctx: Context, config: Config) {
             return segment('onebot:music', result[index], `${result[index].name}\n${result[index].artist}\n${result[index].url}`)
           }
           const { name, artist, url } = result[0]
-          return segment('onebot:music', result, `${name}\n${artist}\n${url}`)
+          return segment('onebot:music', result[0], `${name}\n${artist}\n${url}`)
         }
       } catch (e) {
         console.warn(e)
